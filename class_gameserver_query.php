@@ -831,31 +831,66 @@ class server_query
 	 *
 	 * @return array with gameserver data
 	 */
-	public function source()
+	function source()
 	{
 		$this->send("\xFF\xFF\xFF\xFFTSource Engine Query\x00\x00");
-		if($this->read())
+		if($r = $this->read())
 		{
-			$this->_remove_header();
-			$this->_get_int32();
-			$return = array(
-				'network_version'	=> $this->_get_byte(),
-				'hostname'			=> $this->clean_value($this->_get_string()),
-				'mapname'			=> $this->_get_string(),
-				'directory'			=> $this->_get_string(),
-				'discription'		=> $this->_get_string(),
-				'steam_id'			=> $this->_get_int16(),
-				'numplayers'		=> $this->_get_byte(),
-				'maxplayers'		=> $this->_get_byte(),
-				'bots'				=> $this->_get_byte(),
-				'dedicated'			=> $this->_get_char(),
-				'os'				=> $this->_get_char(),
-				'password'			=> $this->_get_byte(),
-				'secure'			=> $this->_get_byte(),
-				'version'			=> $this->_get_string(),
-				'protokoll'			=> 'Source Engine'
-			);
-			return $return;
+			$this->_get_byte();
+			$this->_get_byte();
+			$this->_get_byte();
+			$this->_get_byte();
+
+			$h = $this->_get_char();
+
+			if($h == "I")
+			{
+
+				$return = array(
+					'network_version'	=> $this->_get_byte(),
+					'hostname'			=> $this->clean_value($this->_get_string()),
+					'mapname'			=> $this->_get_string(),
+					'directory'			=> $this->_get_string(),
+					'discription'		=> $this->_get_string(),
+					'steam_id'			=> $this->_get_int16(),
+					'numplayers'		=> $this->_get_byte(),
+					'maxplayers'		=> $this->_get_byte(),
+					'bots'				=> $this->_get_byte(),
+					'dedicated'			=> $this->_get_char(),
+					'os'				=> $this->_get_char(),
+					'password'			=> $this->_get_byte(),
+					'secure'			=> $this->_get_byte(),
+					'version'			=> $this->_get_string(),
+					'protokoll'			=> 'Source Engine'
+				);
+
+				return $return;
+			}
+
+			// Old gold source
+			if($h == 'm')
+			{
+				$return = array(
+					'ip_address'		=> $this->_get_string(),
+					'hostname'			=> $this->clean_value($this->_get_string()),
+					'mapname'			=> $this->_get_string(),
+					'directory'			=> $this->_get_string(),
+					'discription'		=> $this->_get_string(),
+					'steam_id'			=> '',
+					'numplayers'		=> $this->_get_byte(),
+					'maxplayers'		=> $this->_get_byte(),
+					'protokoll'			=> $this->_get_byte(),
+					'dedicated'			=> $this->_get_char(),
+					'os'				=> $this->_get_char(),
+					'public'			=> $this->_get_byte(),
+					'mod'				=> $this->_get_byte(),
+					'secure'			=> $this->_get_byte(),
+					'bots'				=> $this->_get_byte(),
+					'protokoll'			=> 'Source Engine Gold'
+				);
+
+				return $return;
+			}
 		}
 	}
 	
@@ -894,82 +929,7 @@ class server_query
 			return $player;
 		}
 	}
-	/**
-	 * HLDS status query
-	 * http://developer.valvesoftware.com/wiki/Server_queries
-	 *
-	 * @return array with gameserver data
-	 */
-	public function hlds()
-	{
-		$this->send("\xFF\xFF\xFF\xFFTSource Engine Query\x00\x00");
-		if($this->read())
-		{
-			$this->_remove_header();
-			$this->_get_int16();
-			$this->_get_byte();
-			$this->_get_byte();
-			return array(
-				'ip' => $this->_get_string(),
-				'mapname' => $this->clean_value($this->_get_string()),
-				'directory' => $this->_get_string(),
-				'hostname' => $this->_get_string(),
-				'game' => $this->_get_string(),
-				'numplayers' => $this->_get_byte(),
-				'maxplayers' => $this->_get_byte(),
-				'protocol' => $this->_get_byte(),
-				'dedicated' => $this->_get_char(),
-				'os' => $this->_get_char(),
-				'private' => $this->_get_byte(),
-				'mod' => $this->_get_byte(),
-				'secure' => $this->_get_byte(),
-				'bots' => $this->_get_byte(),
-				'protokoll' => 'Source Engine'
-			);
-		}
-		$this->close();
-	}
-	
-	/**
-	 * HLDS player query
-	 * http://developer.valvesoftware.com/wiki/Server_queries
-	 *
-	 * @return array with player data
-	 */
-	public function hlds_player()
-	{
-		return;
-		$this->send("\xFF\xFF\xFF\xFF\x55\xFF\xFF\xFF\xFF");
-		if($r = $this->read())
-		{
-			//die($r);
-			$this->_get_int32();
-			$this->_get_byte();
-			$challenge = $this->_read_result(4);
-			$send = "\xFF\xFF\xFF\xFF\x55" . $challenge;
-			$this->send($send);
-			if($r = $this->read())
-			{
-				$this->_get_int32();
-				echo $this->_get_byte();
-				$players = (int) $this->_get_byte();
-				$player = array();
-				for($i=1; $i <= $players; $i++)
-				{
-					$player[] = array(
-						'index'	=> $this->_get_byte(),
-						'name'	=> $this->_get_string(),
-						'score'	=> $this->_get_int32(),
-						'time'	=> date('H:i:s', round($this->_get_float32(), 0)+82800),
-					);
-					
-				}
-				$player['count'] = sizeof($player);
-				print_r($player);
-				return $player;
-			}
-		}
-	}
+
 	
 	/**
 	 * SAMP status query
