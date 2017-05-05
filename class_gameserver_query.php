@@ -900,8 +900,9 @@ class server_query
 	 *
 	 * @return array with player data
 	 */
-	public function source_player()
+	function source_player()
 	{
+
 		$this->send("\xFF\xFF\xFF\xFF\x55\xFF\xFF\xFF\xFF");
 		$r = $this->read();
 		$this->_get_int32();
@@ -911,22 +912,30 @@ class server_query
 		$this->send($send);
 		if($this->read())
 		{
-			$this->_get_int32();
 			$this->_get_byte();
-			$players = $this->_get_byte();
-			$player = array();
-			for($i=1; $i <= $players; $i++)
+			$this->_get_byte();
+			$this->_get_byte();
+			$this->_get_byte();
+
+			if ($this->_get_char() == 'D')
 			{
-				$this->_get_byte();
-				$player[] = array(
-					'index'	=> $i,
-					'name'	=> $this->_get_string(),
-					'score'	=> $this->_get_int32(),
-					'time'	=> date('H:i:s', round($this->_get_float32(), 0)+82800),
-				);
+				$players = $this->_get_byte();
+				$player = array();
+				for($i=1; $i <= $players; $i++)
+				{
+
+					$player[] = array(
+						'index'	=> $this->_get_byte(),
+						'name'	=> $this->_get_string(),
+						'score'	=> $this->_get_int32(),
+						'time'	=> date('H:i:s', round($this->_get_float32(), 0)+82800),
+					);
+				}
+				$player['count'] = sizeof($player);
+
+
+				return $player;
 			}
-			$player['count'] = sizeof($player);
-			return $player;
 		}
 	}
 
